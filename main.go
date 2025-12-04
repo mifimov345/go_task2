@@ -208,6 +208,12 @@ func validateContainer(node *yaml.Node, errs *[]ValidationError) {
 				Line: nameKey.Line,
 				Msg:  "name must be string",
 			})
+		} else if nameVal.Value == "" {
+			// ПОЛЕ ЕСТЬ, НО ПУСТОЕ -> "name is required"
+			*errs = append(*errs, ValidationError{
+				Line: nameKey.Line,
+				Msg:  "name is required",
+			})
 		} else if !snakeCaseRe.MatchString(nameVal.Value) {
 			*errs = append(*errs, ValidationError{
 				Line: nameKey.Line,
