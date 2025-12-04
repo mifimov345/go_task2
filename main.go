@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,6 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 	filename := os.Args[1]
+	shortName := filepath.Base(filename)
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -35,20 +37,20 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	errors := validatePod(filename, &root)
+	errors := validatePod(&root)
 	if len(errors) > 0 {
 		for _, e := range errors {
 			if e.Line == 0 {
 				fmt.Println(e.Msg)
 			} else {
-				fmt.Printf("%s:%d %s\n", filename, e.Line, e.Msg)
+				fmt.Printf("%s:%d %s\n", shortName, e.Line, e.Msg)
 			}
 		}
 		os.Exit(1)
 	}
 }
 
-func validatePod(filename string, root *yaml.Node) []ValidationError {
+func validatePod(root *yaml.Node) []ValidationError {
 	var errs []ValidationError
 	if root.Kind != yaml.DocumentNode || len(root.Content) == 0 {
 		errs = append(errs, ValidationError{
@@ -133,6 +135,11 @@ func validateMetadata(node *yaml.Node, errs *[]ValidationError) {
 		*errs = append(*errs, ValidationError{
 			Line: nameKey.Line,
 			Msg:  "name must be string",
+		})
+	} else if nameVal.Value == "" {
+		*errs = append(*errs, ValidationError{
+			Line: nameKey.Line,
+			Msg:  "name is required",
 		})
 	}
 	if nsKey, nsVal := getMapField(node, "namespace"); nsKey != nil {
